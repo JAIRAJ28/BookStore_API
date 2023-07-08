@@ -165,7 +165,6 @@ def create_order():
 
     return jsonify({"message": "Orders created successfully"})
 
-
 @app.route('/orders/<order_id>', methods=['DELETE'])
 def delete_order(order_id):
     result = db.orders.delete_one({"_id": ObjectId(order_id)})
