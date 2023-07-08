@@ -1,9 +1,9 @@
 from flask import Flask, jsonify, request
 from flask_pymongo import PyMongo
 import json
-from bson import json_util
+from bson import json_util,ObjectId
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token,get_jwt_identity
 from bson.regex import Regex
 from mongoengine import Document, StringField
 from mongoengine.fields import EmailField
@@ -26,6 +26,17 @@ class User(Document):
     name = StringField(required=True)
     email = EmailField(required=True, unique=True)
     password = StringField(required=True)
+
+class Cart(Document):
+    user_id = StringField(required=True)
+    book_id = StringField(required=True)
+    quantity = StringField(required=True)
+
+class Order(Document):
+    user_id = StringField(required=True)
+    book_id = StringField(required=True)
+    quantity = StringField(required=True)
+
 
 
 @app.route('/book/signup', methods=["POST"])
@@ -110,29 +121,23 @@ def filter_books():
     return json.loads(json_util.dumps(books))
 
 
+@app.route('/cart',methods=['POST'])
+def getCart():
+    data=request.get_json()
+    result=db.cart.insert_one(data)
+    inserted_id = str(result.inserted_id)
+    print(result)
+    return jsonify({"message":inserted_id})
 
-   
-# @app.route('/book/search', methods=['GET'])
-# def search_books():
-#     query = request.args.get('query')
-#     print(request.args.get('query'))
+
+@app.route('/cart/<cart_item_id>', methods=['DELETE'])
+def remove_from_cart(cart_item_id):
+    result = db.cart.delete_one({'_id': ObjectId(cart_item_id)})
     
-#     books = db.books.find({'$or': [
-#             {'title': {'$regex': query, '$options': 'i'}},
-#             {'author': {'$regex': query, '$options': 'i'}},
-#             {'description': {'$regex': query, '$options': 'i'}},
-#             {'discount': {'$regex': query, '$options': 'i'}},
-#             {'images': {'$regex': query, '$options': 'i'}},
-#             {'price': {'$regex': query, '$options': 'i'}},
-#             {'title': {'$regex': query, '$options': 'i'}}
-             
-#         ]})
-   
-#     return json.loads(json_util.dumps(books))  
-
-
-
-
+    if result.deleted_count == 0:
+        return jsonify({'message': 'Cart item not found'})
+    
+    return jsonify({'message': 'Cart item deleted successfully'})
 
 
 
